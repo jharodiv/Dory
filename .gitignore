@@ -47,3 +47,6 @@ models/
 
 # Colab-specific
 *.ipynb_checkpoints/
+
+
+data/
