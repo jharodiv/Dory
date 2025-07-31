@@ -1,0 +1,49 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Jupyter Notebook Checkpoints
+.ipynb_checkpoints/
+
+# Environment files
+.env
+.venv/
+env/
+venv/
+ENV/
+*.env
+
+# Python virtual environment
+*.egg-info/
+*.egg
+*.eggs
+*.pyo
+*.pyd
+*.pdb
+*.whl
+
+# VS Code
+.vscode/
+
+# PyCharm
+.idea/
+
+# macOS
+.DS_Store
+
+# Audio and Model Artifacts
+data/**/*.wav
+data/**/*.mp3
+data/**/*.flac
+models/
+*.tflite
+*.onnx
+
+# Logs and temp files
+*.log
+*.tmp
+*.bak
+
+# Colab-specific
+*.ipynb_checkpoints/
