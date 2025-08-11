@@ -7,8 +7,8 @@ from tqdm import tqdm
 SAMPLERATE = 16000
 DURATION = 2
 N_MELS = 40
-DATADIR ='../data'
-OUTDIR = '../features'
+DATADIR ='../../data'
+OUTDIR = '../../features'
 
 
 classes = ['wake','not_wake','noise']
@@ -33,7 +33,7 @@ labels = []
 for label in classes:
     classdir = os.path.join(DATADIR, label)
     for file in tqdm(os.listdir(classdir), desc=label):
-        if file.endswith('.was'):
+        if file.endswith('.wav'):
             path = os.path.join(classdir, file)
             features = extractFeatures(path)
             data.append (features)
