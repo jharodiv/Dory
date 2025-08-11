@@ -9,112 +9,114 @@ from sklearn.utils.class_weight import compute_class_weight
 import config
 
 def configure_tensorflow():
-    #Checks if GPU (metal) is available
-    physicalDevice = tf.config.list_physical_devices('GPU')
-    if physicalDevice:
-        print(f"GPU acceleration available: {len(physicalDevice)} devices")
+    # Check if GPU (Metal) is available
+    physical_devices = tf.config.list_physical_devices('GPU')
+    if physical_devices:
+        print(f"✅ GPU acceleration available: {len(physical_devices)} device(s)")
         try:
-            #Enable memory growth to prevent allocation issues
-            for device in physicalDevice:
+            # Enable memory growth to prevent allocation issues
+            for device in physical_devices:
                 tf.config.experimental.set_memory_growth(device, True)
         except RuntimeError as e:
             print(f"Memory growth setting failed: {e}")
     else:
-        print("No GPU acceleration - using CPU")
+        print("⚠️  No GPU acceleration - using CPU")
     
-    return len (physicalDevice) > 0
+    return len(physical_devices) > 0
 
-def checkDataFiles():
-    if not os.path.exists(config.xPath):
-        print(f"X.npy not found at {config.xPath}")
-        print("Update the path")
+def check_data_files():
+    print(f"\n📁 Looking for data files...")
+    print(f"X data: {config.X_PATH}")
+    print(f"y data: {config.Y_PATH}")
+    
+    if not os.path.exists(config.X_PATH):
+        print(f"❌ X.npy not found at {config.X_PATH}")
+        print("Please update the path or copy your files to ~/Documents/Dory/")
         return False
     
-    if not os.path.exists(config.yPath):
-        print(f"y.npy not found at {config.yPath}")
-        print("Update the path")
+    if not os.path.exists(config.Y_PATH):
+        print(f"❌ y.npy not found at {config.Y_PATH}")
+        print("Please update the path or copy your files to ~/Documents/Dory/")
         return False
     
     return True
 
-def createDirectories():
-    os.makedirs(config.modelDirection, exist_ok=True)
+def create_directories():
+    os.makedirs(config.MODEL_DIR, exist_ok=True)
 
 def analyze_class_distribution(y):
-    print(f"\n Class Distribution Analysis:")
-
-    classCount = Counter(y)
-    for className, count in classCount.items():
+    print(f"\n📈 Class Distribution Analysis:")
+    class_counts = Counter(y)
+    for class_name, count in class_counts.items():
         percentage = (count / len(y)) * 100
-        print(f"{className}: {count} samples ({percentage:.1f}%)")
+        print(f"  {class_name}: {count} samples ({percentage:.1f}%)")
+    
+    # Check for class imbalance
+    max_count = max(class_counts.values())
+    min_count = min(class_counts.values())
+    imbalance_ratio = max_count / min_count
+    print(f"\n Class imbalance ratio: {imbalance_ratio:.2f}")
+    if imbalance_ratio > config.IMBALANCE_THRESHOLD:
+        print("   ⚠️  WARNING: Significant class imbalance detected!")
+    
+    return class_counts, imbalance_ratio
 
-    maxCount = max(classCount.values())
-    minCount = min(classCount.values())
-    imbalanceRatio = maxCount / minCount
-    print(f"\n Class Imbalance Ratio: {imbalanceRatio:.2f}")
-    if imbalanceRatio > config.imbalanceThreshold:
-        print("Warning: Significant class imbalance detected")
-
-    return classCount, imbalanceRatio
-
-def prepareLabels(y):
+def prepare_labels(y):
     le = LabelEncoder()
-    yEncoded = le.fit_transform(y)
-
-    #Save label encoder
-    lePath = os.path.join(config.modelDirection, "label_encoder.pkl")
-    with open(lePath, 'wb') as f:
+    y_encoded = le.fit_transform(y)
+    
+    # Save label encoder
+    le_path = os.path.join(config.MODEL_DIR, "label_encoder.pkl")
+    with open(le_path, 'wb') as f:
         pickle.dump(le, f)
+    
+    print(f"\n🏷️ Label mapping:")
+    for i, class_name in enumerate(le.classes_):
+        print(f"  {i}: {class_name}")
+    
+    return y_encoded, le
 
-    print(f"n\Label Mapping:")
-    for i, className in enumerate(le.classes_):
-        print(f"{i}: {className}")
-
-    return yEncoded, le
-
-def calculate_class_weight(yEncoded):
-    classWeights = compute_class_weight(
+def calculate_class_weights(y_encoded):
+    class_weights = compute_class_weight(
         'balanced',
-        classes=np.unique(yEncoded),
-        y=yEncoded
+        classes=np.unique(y_encoded),
+        y=y_encoded
     )
-    classWeightDict = dict(enumerate(classWeights))
-    print(f"\n class weights: {classWeightDict}")
-    return classWeightDict
+    class_weight_dict = dict(enumerate(class_weights))
+    print(f"\n Class weights: {class_weight_dict}")
+    return class_weight_dict
 
-def splitData(X, yEncoded):
-    #Shuffle Data
-    np.random.seed(config.randomSeed)
+def split_data(X, y_encoded):
+    # Shuffle data
+    np.random.seed(config.RANDOM_SEED)
     indices = np.arange(len(X))
     np.random.shuffle(indices)
     X = X[indices]
-    yEncoded = yEncoded[indices]
-
-    #split data
-    trainSplit = int(config,trainSplit * len(X))
-    valSplit = int((config.trainSplit + config.valSplit) * len(X))
-
-    XTrain = X[:trainSplit]
-    XVal = X[trainSplit:valSplit]
-    XTest = X[valSplit]
-
-    yTrain = yEncoded[:trainSplit]
-    yVal = yEncoded[trainSplit:valSplit]
-    yTest = yEncoded[valSplit]
-
-
-    #Expand dims for CNN input
-    XTrain = np.expand_dims(XTrain, axis = -1)
-    XVal = np.expand_dims(XVal, axis = -1)
-    XTest = np.expand_dims(XTest, axis = -1)
-
-    print(f"\n Dataset splits")
-    print(f" Train : X = {XTrain.shape}, y = {yTrain.shape}")
-    print(f" Val : X = {XVal.shape}, y = {yVal.shape}")
-    print(f" Test : X = {XTest.shape}, y = {yTest.shape}")
-
-
-    return (XTrain,XVal,XTest), (yTrain,yVal,yTest)
+    y_encoded = y_encoded[indices]
+    
+    # Split data
+    train_split = int(config.TRAIN_SPLIT * len(X))
+    val_split = int((config.TRAIN_SPLIT + config.VAL_SPLIT) * len(X))
+    
+    X_train = X[:train_split]
+    X_val = X[train_split:val_split]
+    X_test = X[val_split:]
+    
+    y_train = y_encoded[:train_split]
+    y_val = y_encoded[train_split:val_split]
+    y_test = y_encoded[val_split:]
+    
+    # Expand dims for CNN input
+    X_train = np.expand_dims(X_train, axis=-1)
+    X_val = np.expand_dims(X_val, axis=-1)
+    X_test = np.expand_dims(X_test, axis=-1)
+    
+    print(f"\n📏 Dataset splits:")
+    print(f"  Train: X={X_train.shape}, y={y_train.shape}")
+    print(f"  Val:   X={X_val.shape}, y={y_val.shape}")
+    print(f"  Test:  X={X_test.shape}, y={y_test.shape}")
+    
+    return (X_train, X_val, X_test), (y_train, y_val, y_test)
 
 def plot_training_history(history):
     plt.figure(figsize=(12, 4))
@@ -148,7 +150,7 @@ def plot_training_history(history):
     return plot_path, history_path
 
 def evaluate_model(model, X_test, y_test, label_encoder):
-    print(f"\n Final Evaluation:")
+    print(f"\n🎯 Final Evaluation:")
     test_loss, test_accuracy = model.evaluate(X_test, y_test, verbose=0)
     print(f"Test accuracy: {test_accuracy:.4f}")
     
@@ -156,7 +158,7 @@ def evaluate_model(model, X_test, y_test, label_encoder):
     test_predictions = model.predict(X_test)
     test_pred_classes = np.argmax(test_predictions, axis=1)
     
-    print(f"\n Per-class performance on test set:")
+    print(f"\n📊 Per-class performance on test set:")
     for class_idx, class_name in enumerate(label_encoder.classes_):
         class_mask = (y_test == class_idx)
         if np.any(class_mask):

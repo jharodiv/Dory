@@ -1,8 +1,5 @@
-"""
-Model architecture and training functions for Dory audio classification
-"""
 import tensorflow as tf
-from tensorflow.keras import layers, models
+from keras import layers, models
 import os
 import config
 

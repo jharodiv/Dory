@@ -1,25 +1,27 @@
 import os
 
-dataDirection = os.path.expanduser("~/Document/Github/Dory")
-xPath = os.path.join(dataDirection, "X.pny")
-yPath = os.path.join(dataDirection, "y.pny")
-modelDirection = os.path.join(dataDirection, "models")
+# Data paths
+DATA_DIR = os.path.expanduser("~/Documents/GitHub/Dory/features")
+X_PATH = os.path.join(DATA_DIR, "X.npy")
+Y_PATH = os.path.join(DATA_DIR, "y.npy")
+MODEL_DIR = os.path.join(DATA_DIR, "models")
 
-#Training Parameters
-batchSize = 16 # Optimized for 8GB RAM
-learningRate = 0.0001
-epochs = 100
-randomSeed = 42
+# Training parameters
+BATCH_SIZE = 16  # Optimized for 8GB RAM
+LEARNING_RATE = 0.001
+EPOCHS = 100
+RANDOM_SEED = 42
 
-# Data Split Ratio
-trainSplit = 0.7
-valSplit = 0.15
-testSplit = 0.15
+# Data split ratios
+TRAIN_SPLIT = 0.7
+VAL_SPLIT = 0.15
+TEST_SPLIT = 0.15
 
-patience = 15
-lrPatience = 8
-minLR = 1e-6
-lrFactor = 0.5
+# Early stopping parameters
+PATIENCE = 15
+LR_PATIENCE = 8
+MIN_LR = 1e-6
+LR_FACTOR = 0.5
 
 # Class imbalance threshold
-imbalanceThreshold = 3.0
+IMBALANCE_THRESHOLD = 3.0
